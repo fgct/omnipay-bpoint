@@ -28,59 +28,56 @@ class PurchaseRequest extends AbstractRequest
             throw new InvalidRequestException('You must pass a "card" parameter.');
         }
 
-        /* @var $card \OmniPay\Common\CreditCard */
+        /** @var \OmniPay\Common\CreditCard $card */
         $card = $this->getParameter('card');
         $card->validate();
 
-        $data = [];
-
         $payload = [
-            'TestMode' => $this->getTestMode(),
+            'testMode' => $this->getTestMode(),
         ];
 
-        $payload['Action'] = 'payment';
-        $payload['Amount'] = $this->getAmountInteger();
+        $payload['action'] = 'payment';
+        $payload['amount'] = $this->getAmountInteger();
         if ($this->getAmountSurcharge()) {
-            $payload['AmountSurcharge'] = $this->getAmountSurcharge();
+            $payload['amountSurcharge'] = $this->getAmountSurcharge();
         }
-        $payload['Currency'] = $this->getCurrency();
+        $payload['currency'] = $this->getCurrency();
         if ($this->getDescription()) {
-            $payload['MerchantReference'] = $this->filter($this->getDescription());
+            $payload['merchantReference'] = $this->filter($this->getDescription());
         }
-        $payload['Crn1'] = $this->filter($this->getCrn1());
+        $payload['crn1'] = $this->filter($this->getCrn1());
         if ($this->getCrn2()) {
-            $payload['Crn2'] = $this->filter($this->getCrn2());
+            $payload['crn2'] = $this->filter($this->getCrn2());
         }
         if ($this->getCrn3()) {
-            $payload['Crn3'] = $this->filter($this->getCrn3());
+            $payload['crn3'] = $this->filter($this->getCrn3());
         }
-        $payload['StoreCard'] = false;
-        $payload['SubType'] = 'single';
-        $payload['Type'] = 'internet';
-        $payload['CardDetails'] = [
-            'CardHolderName' => $card->getBillingName(),
-            'CardNumber' => $card->getNumber(),
-            'Cvn' => $card->getCvv(),
-            'ExpiryDate' => $card->getExpiryDate('my'),
+        $payload['storeCard'] = false;
+        $payload['subType'] = 'Single';
+        $payload['Type'] = 'Internet';
+        $payload['cardDetails'] = [
+            'name' => $card->getBillingName(),
+            'number' => $card->getNumber(),
+            'cvn' => $card->getCvv(),
+            'expiry' => [
+                // add leading zero to the $card->getExpiryMonth()
+                'month' => str_pad($card->getExpiryMonth(), 2, '0', STR_PAD_LEFT),
+                // get last two digits of the $card->getExpiryYear()
+                'year' => substr($card->getExpiryYear(), -2),
+            ],
         ];
 
         if ($this->getBillerCode()) {
-            $payload['BillerCode'] = $this->filter($this->getBillerCode());
+            $payload['billerCode'] = $this->filter($this->getBillerCode());
         }
 
         // Currently unsupported optional params
-//        $payload['AmountOriginal'] = null;
-//        $payload['Customer'] = null;
-//        $payload['EmailAddress'] = null;
-//        $payload['FraudScreeningRequest'] = null;
-//        $payload['Order'] = null;
-//        $payload['OriginalTxnNumber'] = null;
-//        $payload['StatementDescriptor'] = null;
-//        $payload['TokenisationMode'] = null;
+        // $payload['amountOriginal'] = null; // Base transaction amount in the lowest denomination for the currency (without surcharge)
+        // $payload['emailAddress'] = null;
+        // $payload['originalTxnNumber'] = null;
+        // $payload['statementDescriptor'] = [];
 
-        $data['TxnReq'] = $payload;
-
-        return $data;
+        return $payload;
     }
 
     /**

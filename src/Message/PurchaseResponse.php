@@ -198,7 +198,7 @@ class PurchaseResponse extends AbstractResponse
             return false;
         }
 
-        $responseCode = $this->data['TxnResp']['ResponseCode'];
+        $responseCode = $this->data['responseCode'];
 
         // These are the only valid API response codes for a successful purchase
         if ($responseCode == '0' || $responseCode == '00' || $responseCode == '08' || $responseCode == '16') {
@@ -219,32 +219,7 @@ class PurchaseResponse extends AbstractResponse
      */
     public function getMessage()
     {
-        if (!parent::isSuccessful() && isset($this->data['APIResponse']) && isset($this->data['APIResponse']['ResponseText'])) {
-            return $this->data['APIResponse']['ResponseText'];
-        }
-
-        if (!$this->isSuccessful()) {
-            if (isset($this->data['ErrorString'])) {
-                return $this->data['ErrorString'];
-            }
-            if (isset($this->data['TxnResp']['ResponseCode'], $this->data['TxnResp']['ResponseText'])) {
-                $responseCode = $this->data['TxnResp']['ResponseCode'];
-                $responseText = $this->data['TxnResp']['ResponseText'];
-
-                // Transaction response codes 1-5 will use the bank response code and message
-                if ($responseCode == '1' || $responseCode == '2' || $responseCode == '3' || $responseCode == '4' || $responseCode == '5') {
-                    $bankResponseCode = $this->data['TxnResp']['BankResponseCode'];
-                    $fullErrorMessage = isset(self::BANK_CODE_MESSAGES[$bankResponseCode]) ? self::BANK_CODE_MESSAGES[$bankResponseCode] : null;
-                } else {
-                    $fullErrorMessage = isset(self::API_CODE_MESSAGES[$responseCode]) ? self::API_CODE_MESSAGES[$responseCode] : 'Response Unknown';
-                }
-
-                // e.g. "Declined (Restricted card)."
-                return $responseText . ($fullErrorMessage ? ' (' . $fullErrorMessage . ')' : '') . '.';
-            }
-        }
-
-        return null;
+        return parent::getMessage();
     }
 
     /**
@@ -261,28 +236,7 @@ class PurchaseResponse extends AbstractResponse
      */
     public function getCode()
     {
-        if (!parent::isSuccessful() && isset($this->data['APIResponse']) && isset($this->data['APIResponse']['ResponseCode'])) {
-            return $this->data['APIResponse']['ResponseCode'];
-        }
-
-        if (!$this->isSuccessful()) {
-            if (isset($this->data['ErrorCode'])) {
-                return $this->data['ErrorCode'];
-            }
-            if (isset($this->data['TxnResp']['ResponseCode'], $this->data['TxnResp']['ResponseText'])) {
-                $responseCode = $this->data['TxnResp']['ResponseCode'];
-
-                // Transaction response codes 1-5 will use the bank response code and message
-                if ($responseCode == '1' || $responseCode == '2' || $responseCode == '3' || $responseCode == '4' || $responseCode == '5') {
-                    $bankResponseCode = $this->data['TxnResp']['BankResponseCode'];
-                    return $bankResponseCode;
-                }
-
-                return $responseCode;
-            }
-        }
-
-        return null;
+        return parent::getCode();
     }
 
     /**
@@ -292,8 +246,8 @@ class PurchaseResponse extends AbstractResponse
      */
     public function getTransactionReference()
     {
-        if (isset($this->data['TxnResp']['TxnNumber'])) {
-            return $this->data['TxnResp']['TxnNumber'];
+        if (isset($this->data['receiptNumber'])) {
+            return $this->data['receiptNumber'];
         }
     }
 
@@ -304,6 +258,8 @@ class PurchaseResponse extends AbstractResponse
      */
     public function getTransactionId()
     {
-        return null;
+        if (isset($this->data['txnNumber'])) {
+            return $this->data['txnNumber'];
+        }
     }
 }

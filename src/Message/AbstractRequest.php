@@ -38,6 +38,8 @@ use Omnipay\Common\Exception\InvalidRequestException;
  */
 abstract class AbstractRequest extends \Omnipay\Common\Message\AbstractRequest
 {
+    public $httpResponseCode;
+
     /**
      * Live or Test Endpoint URL.
      */
@@ -45,6 +47,8 @@ abstract class AbstractRequest extends \Omnipay\Common\Message\AbstractRequest
     {
         return $this->getParameter('endpointBase');
     }
+
+    abstract public function getEndpoint();
 
     public function setEndpointBase($value)
     {
@@ -126,13 +130,15 @@ abstract class AbstractRequest extends \Omnipay\Common\Message\AbstractRequest
     {
         $authString = $this->getUsername() . '|' . $this->getMerchantNumber() . ':' . $this->getPassword();
         $headers = [
-            'Authorization' => base64_encode($authString),
+            'Authorization' => 'Basic '.base64_encode($authString),
             'Content-Type' => 'application/json; charset=utf-8',
         ];
         $body = json_encode($data);
         $httpResponse = $this->httpClient->request($this->getHttpMethod(), $this->getEndpoint(), $headers, $body);
+        $this->httpResponseCode = $httpResponse->getStatusCode();
 
-        return $this->createResponse($httpResponse->getBody()->getContents());
+        $body = $httpResponse->getBody()->getContents();
+        return $this->createResponse($body);
     }
 
     /**
@@ -190,5 +196,14 @@ abstract class AbstractRequest extends \Omnipay\Common\Message\AbstractRequest
     protected function filter($string, $maxLength = 50)
     {
         return substr(preg_replace('/[^a-zA-Z0-9 \-]/', '', $string), 0, $maxLength);
+    }
+
+    /**
+     * Get the HTTP response code.
+     * @return int
+     */
+    public function getHttpResponseCode()
+    {
+        return $this->httpResponseCode;
     }
 }

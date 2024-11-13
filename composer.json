@@ -1,5 +1,5 @@
 {
-    "name": "digistorm/omnipay-bpoint",
+    "name": "fgct/omnipay-bpoint",
     "type": "library",
     "description": "BPoint driver for the Omnipay payment processing library",
     "keywords": [
@@ -10,7 +10,7 @@
         "payment",
         "bpoint"
     ],
-    "homepage": "https://github.com/digistorm/omnipay-bpoint",
+    "homepage": "https://github.com/fgct/omnipay-bpoint",
     "license": "MIT",
     "autoload": {
         "psr-4": { "Omnipay\\Bpoint\\" : "src/" }

@@ -75,4 +75,30 @@ trait CommonParametersTrait
     {
         return $this->setParameter('billerCode', $value);
     }
+
+    /**
+     * @return string
+     */
+    public function getResultKey()
+    {
+        return $this->getParameter('resultKey');
+    }
+
+    /**
+     * @param string $value
+     *
+     * @return \Omnipay\Bpoint\Message\AbstractRequest provides a fluent interface.
+     */
+    public function setResultKey($value)
+    {
+        return $this->setParameter('resultKey', $value);
+    }
+
+    /**
+     * @return string
+     */
+    public function getCurrency()
+    {
+        return $this->getParameter('currency') ?: 'AUD';
+    }
 }

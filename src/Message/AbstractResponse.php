@@ -6,6 +6,7 @@
 namespace Omnipay\Bpoint\Message;
 
 use Omnipay\Common\Message\RequestInterface;
+use Omnipay\Bpoint\Message\AbstractRequest;
 
 /**
  * Bpoint Response.
@@ -25,15 +26,7 @@ abstract class AbstractResponse extends \Omnipay\Common\Message\AbstractResponse
         if (is_array($arrayData)) {
             $this->data = $arrayData;
         } else {
-            if (preg_match('/^\<!doctype html/i', $data) && preg_match('/\<title>([^<]+)\<\/title>/i', $data, $matches)) {
-                $errorString = $matches[1];
-            } else {
-                $errorString = substr($data, 0, 255);
-            }
-            $this->data = [
-                'ErrorString' => $errorString,
-                'ErrorCode' => 500,
-            ];
+            // TODO: handle error
         }
     }
 
@@ -44,25 +37,13 @@ abstract class AbstractResponse extends \Omnipay\Common\Message\AbstractResponse
      */
     public function isSuccessful()
     {
-        if (!isset($this->data['APIResponse']) || !isset($this->data['APIResponse']['ResponseCode'])) {
-            return false;
+        /** @var AbstractRequest $request */
+        $request = $this->request;
+        if ($request->getHttpResponseCode() >= 200 && $request->getHttpResponseCode() < 300) {
+            return true;
         }
 
-        return $this->data['APIResponse']['ResponseCode'] == 0;
-    }
-
-    /**
-     * Get a token, for createToken requests.
-     *
-     * @return string|null
-     */
-    public function getToken()
-    {
-        if (!isset($this->data['DVTokenResp']) || !isset($this->data['DVTokenResp']['DVToken'])) {
-            return null;
-        }
-
-        return $this->data['DVTokenResp']['DVToken'];
+        return false;
     }
 
     /**
@@ -70,23 +51,32 @@ abstract class AbstractResponse extends \Omnipay\Common\Message\AbstractResponse
      *
      * Returns null if the request was successful.
      *
+     * @link https://www.bpoint.com.au/developers/v3/index.htm#!#txnResponses
+     *
      * @return string|null
      */
     public function getMessage()
     {
-        if (!$this->isSuccessful() && isset($this->data['APIResponse']) && isset($this->data['APIResponse']['ResponseText'])) {
-            return $this->data['APIResponse']['ResponseText'];
+        if (!$this->isSuccessful()) {
+            if (isset($this->data['message'])) {
+                return $this->data['message'];
+            }
         }
-
-        if (isset($this->data['ErrorString'])) {
-            return $this->data['ErrorString'];
+        $data = isset($this->data["txn"]) ? $this->data["txn"] : $this->data;
+        if (isset($data["responseText"])) {
+            return $data["responseText"];
         }
 
         return null;
     }
 
     /**
-     * Get the error message from the response.
+     * Get the error code from the response.
+     *
+     * Transaction responses 1-5 will return the two digit bank response code e.g. "38" (Allowable PIN tries exceeded).
+     * All other error responses will return the BPoint error code.
+     *
+     * @link https://www.bpoint.com.au/developers/v3/index.htm#!#txnResponses
      *
      * Returns null if the request was successful.
      *
@@ -94,12 +84,9 @@ abstract class AbstractResponse extends \Omnipay\Common\Message\AbstractResponse
      */
     public function getCode()
     {
-        if (!$this->isSuccessful() && isset($this->data['APIResponse']) && isset($this->data['APIResponse']['ResponseCode'])) {
-            return $this->data['APIResponse']['ResponseCode'];
-        }
-
-        if (isset($this->data['ErrorCode'])) {
-            return $this->data['ErrorCode'];
+        $data = isset($this->data["txn"]) ? $this->data["txn"] : $this->data;
+        if (isset($data["responseCode"])) {
+            return $data["responseCode"];
         }
 
         return null;
